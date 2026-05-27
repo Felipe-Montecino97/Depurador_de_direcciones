@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 
+from catalog.chile_geo import ChileGeoResolver, find_column
 from normalization.cleaner import clean_address
 from dataio.exporter import export_results
 from dataio.loader import load_addresses
@@ -22,6 +23,16 @@ def main() -> None:
 
     df, address_column = load_addresses(args.input, args.column)
 
+    master_catalog = Path("Maestro/output/maestro_territorial_chile.csv")
+    alias_catalog = Path("Maestro/output/alias_territorial_chile.csv")
+    geo_resolver = None
+    if master_catalog.exists():
+        geo_resolver = ChileGeoResolver.from_paths(master_catalog, alias_catalog)
+
+    comuna_column = find_column(list(df.columns), ["COMUNA"])
+    ciudad_column = find_column(list(df.columns), ["CIUDAD"])
+    region_column = find_column(list(df.columns), ["REGION", "REGIÓN"])
+
     results = []
     cleaned_addresses = []
 
@@ -29,6 +40,26 @@ def main() -> None:
         original = str(original_value)
         cleaned = clean_address(original)
         scored = score_address(cleaned)
+
+        comuna_raw = str(df.iloc[row_index - 1][comuna_column]) if comuna_column else ""
+        ciudad_raw = str(df.iloc[row_index - 1][ciudad_column]) if ciudad_column else ""
+        region_raw = str(df.iloc[row_index - 1][region_column]) if region_column else ""
+
+        if geo_resolver is None:
+            territorial = {
+                "comuna": "",
+                "region": "",
+                "estado_territorial": "SIN_CATALOGO_TERRITORIAL",
+                "origen_comuna": "",
+                "fuente_territorial": "",
+            }
+        else:
+            territorial = geo_resolver.resolve(
+                comuna_raw=comuna_raw,
+                ciudad_raw=ciudad_raw,
+                region_raw=region_raw,
+                direccion_raw=cleaned,
+            )
 
         cleaned_addresses.append(cleaned)
         results.append(
@@ -43,6 +74,11 @@ def main() -> None:
                     f"{item['token']}:{item['points']}({item['category']})"
                     for item in scored["token_analysis"]
                 ),
+                "comuna_resuelta": territorial["comuna"],
+                "region_resuelta": territorial["region"],
+                "estado_territorial": territorial["estado_territorial"],
+                "origen_comuna": territorial["origen_comuna"],
+                "fuente_territorial": territorial["fuente_territorial"],
             }
         )
 
