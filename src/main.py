@@ -7,6 +7,7 @@ from dataio.exporter import export_results
 from dataio.loader import load_addresses
 from scoring.scorer import score_address
 from dedup.deduplicator import find_duplicates
+from parsing.address_parser import parse_address_components
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -32,6 +33,7 @@ def main() -> None:
     comuna_column = find_column(list(df.columns), ["COMUNA"])
     ciudad_column = find_column(list(df.columns), ["CIUDAD"])
     region_column = find_column(list(df.columns), ["REGION", "REGIÓN"])
+    numero_column = find_column(list(df.columns), ["NUMERO", "NRO", "NÚMERO"])
 
     results = []
     cleaned_addresses = []
@@ -44,6 +46,8 @@ def main() -> None:
         comuna_raw = str(df.iloc[row_index - 1][comuna_column]) if comuna_column else ""
         ciudad_raw = str(df.iloc[row_index - 1][ciudad_column]) if ciudad_column else ""
         region_raw = str(df.iloc[row_index - 1][region_column]) if region_column else ""
+        numero_raw = str(df.iloc[row_index - 1][numero_column]) if numero_column else ""
+        parsed_address = parse_address_components(cleaned, numero_raw)
 
         if geo_resolver is None:
             territorial = {
@@ -67,6 +71,9 @@ def main() -> None:
                 "row": row_index,
                 "direccion_original": original,
                 "direccion_limpia": cleaned,
+                "direccion_base": parsed_address["direccion_base"],
+                "numero_final": parsed_address["numero_final"],
+                "detalle_direccion": parsed_address["detalle_direccion"],
                 "score": scored["score"],
                 "estado": scored["status"],
                 "razones": " | ".join(scored["reasons"]),
