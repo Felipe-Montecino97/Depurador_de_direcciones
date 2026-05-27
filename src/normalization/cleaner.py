@@ -22,6 +22,8 @@ ABBREVIATIONS = {
     "stgo": "santiago",
 }
 
+MEANINGFUL_SHORT_TOKENS = {"n", "b", "a", "km"}
+
 
 def remove_accents(text: str) -> str:
     normalized = unicodedata.normalize("NFD", text)
@@ -40,6 +42,7 @@ def clean_address(address: str) -> str:
     text = text.replace(";", " ")
     text = text.replace(":", " ")
     text = text.replace("-", " ")
+    text = text.replace("/", " ")
     text = text.replace("#", " # ")
 
     text = re.sub(r"[^a-z0-9#\s]", " ", text)
@@ -48,7 +51,13 @@ def clean_address(address: str) -> str:
 
     normalized_words = []
     for word in words:
-        normalized_words.append(ABBREVIATIONS.get(word, word))
+        normalized = ABBREVIATIONS.get(word, word)
+
+        # Se conservan tokens cortos que aportan contexto útil.
+        if len(normalized) == 1 and not normalized.isdigit() and normalized not in MEANINGFUL_SHORT_TOKENS:
+            continue
+
+        normalized_words.append(normalized)
 
     text = " ".join(normalized_words)
     text = re.sub(r"\s+", " ", text).strip()

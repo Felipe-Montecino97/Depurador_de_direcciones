@@ -1,0 +1,796 @@
+pip install requests
+ 
+import requests
+ 
+URL = "http://192.168.1.7:11434/api/generate"
+ 
+payload = {
+
+    "model": "llama3.1:8b",
+
+    "prompt": "Explica qué es GenAI en 3 líneas",
+
+    "stream": False
+
+}
+ 
+response = requests.post(URL, json=payload)
+ 
+data = response.json()
+ 
+print("\nRespuesta del modelo:\n")
+
+print(data["response"])
+ 
+Python ollama_test.py
+ 
+import requests
+ 
+URL = "http://192.168.1.7:11434/api/chat"
+ 
+payload = {
+
+    "model": "llama3.1:8b",
+
+    "messages": [
+
+        {
+
+            "role": "system",
+
+            "content": "Eres un arquitecto empresarial experto en SAP y GenAI."
+
+        },
+
+        {
+
+            "role": "user",
+
+            "content": "Qué ventajas tiene RAG híbrido?"
+
+        }
+
+    ],
+
+    "stream": False
+
+}
+ 
+response = requests.post(URL, json=payload)
+ 
+data = response.json()
+ 
+print("\nRespuesta:\n")
+
+print(data["message"]["content"])
+ 
+archivo: list_models.py
+import requests
+ 
+URL = "http://192.168.1.7:11434/api/tags"
+ 
+response = requests.get(URL)
+ 
+data = response.json()
+ 
+print("\nModelos disponibles:\n")
+ 
+for model in data["models"]:
+
+    print("-", model["name"])
+ 
+
+explicame todo esto porfavor
+Pensado durante un par de segundos
+
+Claro. Todo esto son scripts Python para conectarte a Ollama a través de su API HTTP y pedirle respuestas a un modelo local/remoto, en este caso:
+
+llama3.1:8b
+
+La IP:
+
+http://192.168.1.7:11434
+
+indica que Ollama está corriendo en otra máquina de tu red local, o quizá en la misma red, usando el puerto estándar de Ollama: 11434.
+
+1. Instalación de requests
+pip install requests
+
+Esto instala la librería requests, que sirve para hacer llamadas HTTP desde Python.
+
+En este caso la usas para comunicarte con la API de Ollama:
+
+import requests
+Primer script: /api/generate
+import requests
+
+URL = "http://192.168.1.7:11434/api/generate"
+
+payload = {
+    "model": "llama3.1:8b",
+    "prompt": "Explica qué es GenAI en 3 líneas",
+    "stream": False
+}
+
+response = requests.post(URL, json=payload)
+
+data = response.json()
+
+print("\nRespuesta del modelo:\n")
+print(data["response"])
+
+Este script hace una petición directa al modelo usando el endpoint:
+
+/api/generate
+
+Ese endpoint se usa cuando quieres enviar un prompt simple al modelo.
+
+Qué hace cada parte
+URL
+URL = "http://192.168.1.7:11434/api/generate"
+
+Define la dirección donde está escuchando Ollama.
+
+192.168.1.7 es la IP del servidor donde corre Ollama.
+11434 es el puerto de Ollama.
+/api/generate es el endpoint para generación de texto simple.
+Payload
+payload = {
+    "model": "llama3.1:8b",
+    "prompt": "Explica qué es GenAI en 3 líneas",
+    "stream": False
+}
+
+Este es el cuerpo de la petición.
+
+"model" indica qué modelo quieres usar.
+"prompt" es la pregunta o instrucción que envías.
+"stream": False significa que quieres recibir la respuesta completa de una vez.
+
+Si stream fuera True, Ollama iría devolviendo la respuesta por partes, palabra por palabra o fragmento por fragmento.
+
+Petición HTTP
+response = requests.post(URL, json=payload)
+
+Esto envía una petición POST a Ollama con el payload en formato JSON.
+
+Conversión de respuesta
+data = response.json()
+
+Convierte la respuesta de Ollama a un diccionario Python.
+
+La respuesta suele venir con una estructura parecida a esta:
+
+{
+    "model": "llama3.1:8b",
+    "created_at": "...",
+    "response": "GenAI es...",
+    "done": True
+}
+Imprimir respuesta
+print(data["response"])
+
+Aquí muestras solo el texto generado por el modelo.
+
+Segundo script: /api/chat
+import requests
+
+URL = "http://192.168.1.7:11434/api/chat"
+
+payload = {
+    "model": "llama3.1:8b",
+    "messages": [
+        {
+            "role": "system",
+            "content": "Eres un arquitecto empresarial experto en SAP y GenAI."
+        },
+        {
+            "role": "user",
+            "content": "Qué ventajas tiene RAG híbrido?"
+        }
+    ],
+    "stream": False
+}
+
+response = requests.post(URL, json=payload)
+
+data = response.json()
+
+print("\nRespuesta:\n")
+print(data["message"]["content"])
+
+Este script usa el endpoint:
+
+/api/chat
+
+Este endpoint es mejor cuando quieres trabajar en formato conversación, parecido a ChatGPT.
+
+Diferencia entre /api/generate y /api/chat
+
+La diferencia principal es esta:
+
+Endpoint	Uso principal	Formato
+/api/generate	Prompt simple	"prompt": "texto"
+/api/chat	Conversaciones con roles	"messages": [...]
+Qué son los roles
+
+En /api/chat, usas mensajes con roles:
+
+"messages": [
+    {
+        "role": "system",
+        "content": "Eres un arquitecto empresarial experto en SAP y GenAI."
+    },
+    {
+        "role": "user",
+        "content": "Qué ventajas tiene RAG híbrido?"
+    }
+]
+system
+{
+    "role": "system",
+    "content": "Eres un arquitecto empresarial experto en SAP y GenAI."
+}
+
+Este mensaje define el comportamiento del modelo.
+
+Es como decirle:
+
+Responde desde el punto de vista de un arquitecto empresarial experto en SAP y GenAI.
+
+Esto condiciona el estilo, profundidad y enfoque de la respuesta.
+
+user
+{
+    "role": "user",
+    "content": "Qué ventajas tiene RAG híbrido?"
+}
+
+Este es el mensaje del usuario, o sea, la pregunta real.
+
+Respuesta del endpoint /api/chat
+
+La respuesta de /api/chat normalmente viene así:
+
+{
+    "model": "llama3.1:8b",
+    "created_at": "...",
+    "message": {
+        "role": "assistant",
+        "content": "Un RAG híbrido tiene varias ventajas..."
+    },
+    "done": True
+}
+
+Por eso imprimes:
+
+print(data["message"]["content"])
+
+En cambio, en /api/generate imprimías:
+
+print(data["response"])
+
+Porque la estructura de respuesta es distinta.
+
+Tercer script: list_models.py
+import requests
+
+URL = "http://192.168.1.7:11434/api/tags"
+
+response = requests.get(URL)
+
+data = response.json()
+
+print("\nModelos disponibles:\n")
+
+for model in data["models"]:
+    print("-", model["name"])
+
+Este script consulta qué modelos están instalados en Ollama.
+
+Usa el endpoint:
+
+/api/tags
+Qué hace
+response = requests.get(URL)
+
+Hace una petición GET a Ollama.
+
+A diferencia de los otros scripts, aquí no envías un prompt. Solo preguntas:
+
+¿Qué modelos tienes disponibles?
+
+Respuesta esperada
+
+Ollama puede responder algo como:
+
+{
+    "models": [
+        {
+            "name": "llama3.1:8b",
+            "modified_at": "...",
+            "size": 4920753328
+        },
+        {
+            "name": "mistral:7b",
+            "modified_at": "...",
+            "size": 4100000000
+        }
+    ]
+}
+
+Luego recorres la lista:
+
+for model in data["models"]:
+    print("-", model["name"])
+
+Y te muestra:
+
+Modelos disponibles:
+
+- llama3.1:8b
+- mistral:7b
+Cómo se ejecutan los archivos
+
+Tú pusiste:
+
+Python ollama_test.py
+
+Normalmente se ejecuta así:
+
+python ollama_test.py
+
+o, dependiendo de tu sistema:
+
+python3 ollama_test.py
+
+En Windows puede funcionar también:
+
+py ollama_test.py
+Resumen simple
+
+Tienes tres cosas:
+
+Un script para hacer una pregunta simple al modelo
+
+/api/generate
+
+Un script para conversar con el modelo usando roles
+
+/api/chat
+
+Un script para listar los modelos instalados en Ollama
+
+/api/tags
+Ejemplo mental
+
+Piensa en Ollama como un servidor de IA.
+
+Tu Python hace esto:
+
+Python → requests → Ollama API → Modelo llama3.1:8b → Respuesta
+
+Es decir:
+
+Python prepara una pregunta.
+La manda por HTTP a Ollama.
+Ollama ejecuta el modelo.
+El modelo genera una respuesta.
+Python recibe la respuesta.
+Python la imprime en pantalla.
+Versión mejorada con control de errores
+
+Te recomiendo escribirlo así para evitar errores si el servidor no responde:
+
+import requests
+
+URL = "http://192.168.1.7:11434/api/chat"
+
+payload = {
+    "model": "llama3.1:8b",
+    "messages": [
+        {
+            "role": "system",
+            "content": "Eres un arquitecto empresarial experto en SAP y GenAI."
+        },
+        {
+            "role": "user",
+            "content": "Qué ventajas tiene RAG híbrido?"
+        }
+    ],
+    "stream": False
+}
+
+try:
+    response = requests.post(URL, json=payload, timeout=60)
+    response.raise_for_status()
+
+    data = response.json()
+
+    print("\nRespuesta:\n")
+    print(data["message"]["content"])
+
+except requests.exceptions.ConnectionError:
+    print("Error: no se pudo conectar con Ollama. Revisa la IP, el puerto y si Ollama está corriendo.")
+
+except requests.exceptions.Timeout:
+    print("Error: la petición tardó demasiado tiempo.")
+
+except requests.exceptions.HTTPError as e:
+    print("Error HTTP:", e)
+
+except KeyError:
+    print("Error: la respuesta no tiene la estructura esperada.")
+    print(response.text)
+En simple: ¿para qué sirve esto?
+
+Sirve para que puedas usar un modelo local de Ollama desde Python y construir aplicaciones como:
+
+chatbots internos,
+asistentes SAP,
+APIs corporativas,
+automatización de consultas,
+prototipos GenAI,
+soluciones RAG,
+asistentes conectados a documentos,
+pruebas con modelos locales sin depender de OpenAI, Azure o AWS.
+
+La parte más importante es esta:
+
+requests.post(URL, json=payload)
+
+Porque ahí es donde Python le manda la pregunta al modelo.
+
+quiero ocupar alguno de estos 3 para poder realizar un depurador de direcciones, el cual una pagina me proporciona un excel, pero en este excel viene una cantidad anormal de direcciones repetidas de una personas, unas con mas informacion que otras, entonces claro me proporcionaron estas apis para complementar este desarrollo que debo realizar
+Pensado durante un par de segundos
+
+Sí, para tu caso el mejor de los 3 es /api/chat, no /api/generate ni /api/tags.
+
+Tu problema no es solo “generar texto”, sino comparar, razonar y decidir cuál dirección es mejor cuando hay repetidas con distinta calidad de información. Para eso conviene usar el modelo con un rol claro, instrucciones y una estructura de salida.
+
+Qué API usar para tu depurador
+1. /api/tags
+
+Este solo sirve para listar modelos disponibles.
+
+Úsalo al inicio para verificar que tienes instalado:
+
+llama3.1:8b
+
+Pero no sirve para depurar direcciones.
+
+2. /api/generate
+
+Sirve para enviar un prompt simple.
+
+Podrías usarlo, pero no es lo ideal porque tu caso necesita instrucciones más complejas, por ejemplo:
+
+comparar direcciones,
+detectar duplicados,
+elegir la más completa,
+devolver JSON,
+explicar por qué eligió una dirección,
+normalizar campos.
+3. /api/chat
+
+Este es el recomendado.
+
+Te permite decirle al modelo algo como:
+
+Eres un depurador experto de direcciones chilenas.
+Debes comparar direcciones repetidas de una misma persona.
+Debes elegir la dirección más completa y devolver un JSON.
+
+Entonces tu flujo sería:
+
+Excel → Python → agrupar direcciones por persona → Ollama /api/chat → dirección depurada → nuevo Excel limpio
+Lo importante: no mandes todo el Excel al modelo de una vez
+
+El modelo no debería recibir el Excel completo. Lo correcto es:
+
+Leer el Excel con Python.
+Agrupar registros por persona.
+Detectar posibles direcciones duplicadas.
+Enviar al modelo solo las direcciones candidatas de una persona.
+Recibir la dirección consolidada.
+Guardar un nuevo Excel depurado.
+Ejemplo del problema
+
+Tu Excel podría tener algo así:
+
+RUT	Nombre	Dirección
+11111111-1	Juan Pérez	Av. Apoquindo 123
+11111111-1	Juan Pérez	Apoquindo 123, Las Condes
+11111111-1	Juan Pérez	Avenida Apoquindo 123 depto 45, Las Condes, Santiago
+22222222-2	María Soto	Los Pinos 456
+22222222-2	María Soto	Calle Los Pinos 456, Maipú
+
+El objetivo sería dejar algo así:
+
+RUT	Nombre	Dirección depurada
+11111111-1	Juan Pérez	Avenida Apoquindo 123, Depto 45, Las Condes, Santiago
+22222222-2	María Soto	Calle Los Pinos 456, Maipú
+Arquitectura recomendada
+
+Yo lo haría en 2 etapas:
+
+Etapa 1: depuración automática con reglas
+
+Antes de usar IA, puedes limpiar muchas cosas con Python:
+
+pasar todo a mayúsculas o formato título,
+eliminar espacios dobles,
+quitar puntos innecesarios,
+normalizar abreviaciones:
+AV → AVENIDA
+PJE → PASAJE
+DPTO → DEPARTAMENTO
+N° → NUMERO
+detectar direcciones idénticas,
+agrupar por RUT, ID cliente o nombre + documento.
+
+Esto es rápido, barato y confiable.
+
+Etapa 2: usar Ollama solo para casos ambiguos
+
+Por ejemplo, cuando tienes varias direcciones parecidas pero no iguales:
+
+AV APOQUINDO 123
+APOQUINDO 123 LAS CONDES
+AVENIDA APOQUINDO 123 DEPTO 45 LAS CONDES SANTIAGO
+
+Ahí sí conviene pedirle al modelo que seleccione la dirección más completa.
+
+Ejemplo de prompt para /api/chat
+
+La idea es obligar al modelo a responder en JSON, no en texto libre.
+
+payload = {
+    "model": "llama3.1:8b",
+    "messages": [
+        {
+            "role": "system",
+            "content": """
+Eres un sistema experto en depuración de direcciones.
+Tu tarea es comparar direcciones posiblemente repetidas de una misma persona.
+
+Reglas:
+1. Debes seleccionar la dirección más completa.
+2. Si varias direcciones aportan información complementaria, debes consolidarlas.
+3. No inventes datos que no estén presentes.
+4. Mantén comuna, ciudad, departamento, block, villa o población si aparecen.
+5. Devuelve exclusivamente un JSON válido.
+"""
+        },
+        {
+            "role": "user",
+            "content": """
+Persona:
+RUT: 11111111-1
+Nombre: Juan Pérez
+
+Direcciones encontradas:
+1. Av Apoquindo 123
+2. Apoquindo 123 Las Condes
+3. Avenida Apoquindo 123 depto 45 Las Condes Santiago
+
+Devuelve:
+{
+  "direccion_final": "...",
+  "confianza": "alta/media/baja",
+  "motivo": "...",
+  "direcciones_descartadas": [...]
+}
+"""
+        }
+    ],
+    "stream": False
+}
+
+Respuesta esperada:
+
+{
+  "direccion_final": "Avenida Apoquindo 123, Depto 45, Las Condes, Santiago",
+  "confianza": "alta",
+  "motivo": "La tercera dirección contiene todos los datos presentes en las otras y agrega departamento, comuna y ciudad.",
+  "direcciones_descartadas": [
+    "Av Apoquindo 123",
+    "Apoquindo 123 Las Condes"
+  ]
+}
+Código base para leer Excel y usar Ollama
+
+Este sería un ejemplo inicial bastante útil:
+
+import pandas as pd
+import requests
+import json
+
+OLLAMA_URL = "http://192.168.1.7:11434/api/chat"
+MODEL = "llama3.1:8b"
+
+ARCHIVO_ENTRADA = "direcciones.xlsx"
+ARCHIVO_SALIDA = "direcciones_depuradas.xlsx"
+
+df = pd.read_excel(ARCHIVO_ENTRADA)
+
+# Ajusta estos nombres según tu Excel real
+COLUMNA_ID = "RUT"
+COLUMNA_NOMBRE = "Nombre"
+COLUMNA_DIRECCION = "Direccion"
+
+
+def limpiar_texto(valor):
+    if pd.isna(valor):
+        return ""
+    texto = str(valor).strip()
+    texto = " ".join(texto.split())
+    return texto
+
+
+def depurar_direcciones_con_ia(rut, nombre, direcciones):
+    direcciones_limpias = [d for d in direcciones if d]
+
+    if len(direcciones_limpias) == 0:
+        return {
+            "direccion_final": "",
+            "confianza": "baja",
+            "motivo": "No hay direcciones disponibles.",
+            "direcciones_descartadas": []
+        }
+
+    if len(set(direcciones_limpias)) == 1:
+        return {
+            "direccion_final": direcciones_limpias[0],
+            "confianza": "alta",
+            "motivo": "Todas las direcciones son iguales.",
+            "direcciones_descartadas": []
+        }
+
+    lista_direcciones = "\n".join(
+        [f"{i+1}. {direccion}" for i, direccion in enumerate(direcciones_limpias)]
+    )
+
+    prompt_usuario = f"""
+Persona:
+RUT: {rut}
+Nombre: {nombre}
+
+Direcciones encontradas:
+{lista_direcciones}
+
+Debes devolver exclusivamente un JSON válido con esta estructura:
+{{
+  "direccion_final": "...",
+  "confianza": "alta/media/baja",
+  "motivo": "...",
+  "direcciones_descartadas": [...]
+}}
+"""
+
+    payload = {
+        "model": MODEL,
+        "messages": [
+            {
+                "role": "system",
+                "content": """
+Eres un sistema experto en depuración de direcciones chilenas.
+
+Tu tarea es comparar direcciones posiblemente repetidas de una misma persona.
+
+Reglas:
+1. Selecciona la dirección más completa.
+2. Si varias direcciones aportan información complementaria, consolídalas.
+3. No inventes comuna, ciudad, número, departamento ni referencias.
+4. Conserva datos como departamento, block, torre, villa, población, comuna y ciudad.
+5. Si no puedes decidir claramente, usa confianza baja.
+6. Devuelve exclusivamente JSON válido, sin explicaciones fuera del JSON.
+"""
+            },
+            {
+                "role": "user",
+                "content": prompt_usuario
+            }
+        ],
+        "stream": False
+    }
+
+    response = requests.post(OLLAMA_URL, json=payload, timeout=120)
+    response.raise_for_status()
+
+    data = response.json()
+    contenido = data["message"]["content"]
+
+    try:
+        return json.loads(contenido)
+    except json.JSONDecodeError:
+        return {
+            "direccion_final": "",
+            "confianza": "baja",
+            "motivo": "El modelo no devolvió JSON válido.",
+            "respuesta_modelo": contenido,
+            "direcciones_descartadas": []
+        }
+
+
+# Limpieza inicial
+df[COLUMNA_DIRECCION] = df[COLUMNA_DIRECCION].apply(limpiar_texto)
+
+resultados = []
+
+for rut, grupo in df.groupby(COLUMNA_ID):
+    nombre = grupo[COLUMNA_NOMBRE].iloc[0]
+    direcciones = grupo[COLUMNA_DIRECCION].dropna().unique().tolist()
+
+    resultado_ia = depurar_direcciones_con_ia(rut, nombre, direcciones)
+
+    resultados.append({
+        "RUT": rut,
+        "Nombre": nombre,
+        "Direccion_Depurada": resultado_ia.get("direccion_final", ""),
+        "Confianza": resultado_ia.get("confianza", ""),
+        "Motivo": resultado_ia.get("motivo", ""),
+        "Cantidad_Direcciones_Originales": len(direcciones),
+        "Direcciones_Originales": " | ".join(direcciones)
+    })
+
+df_salida = pd.DataFrame(resultados)
+df_salida.to_excel(ARCHIVO_SALIDA, index=False)
+
+print("Archivo generado:", ARCHIVO_SALIDA)
+Qué librerías necesitas
+
+Instala esto:
+
+pip install pandas openpyxl requests
+pandas: para leer y procesar Excel.
+openpyxl: para abrir archivos .xlsx.
+requests: para llamar a Ollama.
+Flujo completo recomendado
+1. Descargar Excel desde la página
+2. Leer Excel con pandas
+3. Normalizar textos
+4. Agrupar por persona
+5. Comparar direcciones repetidas
+6. Usar Ollama /api/chat para consolidar
+7. Generar Excel final limpio
+Recomendación importante
+
+No uses IA para todo desde el principio. Usa esta lógica:
+
+Si hay 1 dirección → conservar
+Si hay varias idénticas → conservar una
+Si hay varias parecidas → usar IA
+Si hay varias totalmente distintas → marcar para revisión manual
+
+Esto evita errores y hace el proceso más rápido.
+
+Ejemplo de salida útil
+
+Tu Excel final debería tener columnas como:
+
+RUT	Nombre	Dirección_Depurada	Confianza	Motivo	Direcciones_Originales
+11111111-1	Juan Pérez	Avenida Apoquindo 123, Depto 45, Las Condes, Santiago	alta	Es la dirección más completa	Av Apoquindo 123 | Apoquindo 123 Las Condes | Avenida Apoquindo 123 depto 45 Las Condes Santiago
+
+La columna Confianza es clave, porque después puedes filtrar:
+
+alta: aceptar automáticamente,
+media: revisar si quieres,
+baja: revisión manual obligatoria.
+Mi recomendación final
+
+Usa:
+
+/api/chat
+
+Para este desarrollo.
+
+Y deja los otros así:
+
+/api/tags     → verificar modelos instalados
+/api/generate → pruebas simples
+/api/chat     → depurador real de direcciones
+
+La solución ideal sería:
+
+Python + pandas + Ollama /api/chat + Excel final depurado

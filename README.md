@@ -14,15 +14,25 @@ El sistema debe:
 - Asignar un score interno de calidad.
 - Exportar un archivo con los resultados depurados.
 
-## Estado del proyecto
+## Estructura actual
 
-Proyecto en etapa inicial.
+El flujo está separado por responsabilidad:
 
-## Etapas previstas
+- `src/loader.py`: carga CSV/Excel y selecciona columna de direcciones.
+- `src/cleaner.py`: limpieza y normalización sin eliminar direcciones largas.
+- `src/scorer.py`: scoring palabra por palabra con razones y análisis por token.
+- `src/deduplicator.py`: detección de duplicados exactos y similares.
+- `src/exporter.py`: exportación a Excel en múltiples hojas.
+- `src/main.py`: orquestación del pipeline offline completo.
 
-1. Carga de archivo Excel/CSV.
-2. Limpieza básica de texto.
-3. Normalización de abreviaturas.
-4. Detección de duplicados.
-5. Scoring de calidad de dirección.
-6. Exportación de resultados.
+## Uso
+
+```bash
+python src/main.py --input data/input/archivo.xlsx --output data/output/resultado_depurado.xlsx --column direccion --threshold 88
+```
+
+Parámetros:
+- `--input`: archivo fuente CSV o Excel.
+- `--output`: ruta del Excel de salida.
+- `--column`: columna de direcciones (opcional).
+- `--threshold`: umbral para similares (por defecto 88).
