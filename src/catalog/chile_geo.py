@@ -103,23 +103,6 @@ class ChileGeoResolver:
         official = self.region_norm_to_official.get(normalized)
         return official or ""
 
-    def _resolve_comuna_from_text(self, raw_text: str) -> str:
-        normalized_text = f" {normalize_text(raw_text)} "
-        if normalized_text.strip() == "":
-            return ""
-
-        matches: list[tuple[int, str]] = []
-        for comuna_norm, comuna_official in self.comuna_norm_to_official.items():
-            token = f" {comuna_norm} "
-            if token in normalized_text:
-                matches.append((len(comuna_norm), comuna_official))
-
-        if not matches:
-            return ""
-
-        matches.sort(key=lambda item: item[0], reverse=True)
-        return matches[0][1]
-
     def resolve(self, comuna_raw: str, ciudad_raw: str, region_raw: str, direccion_raw: str) -> dict[str, str]:
         comuna = self._resolve_comuna_candidate(comuna_raw)
         source = "COMUNA"
@@ -127,10 +110,6 @@ class ChileGeoResolver:
         if not comuna:
             comuna = self._resolve_comuna_candidate(ciudad_raw)
             source = "CIUDAD"
-
-        if not comuna:
-            comuna = self._resolve_comuna_from_text(direccion_raw)
-            source = "DIRECCION"
 
         if not comuna:
             return {

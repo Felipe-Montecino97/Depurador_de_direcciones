@@ -15,13 +15,22 @@ DETAIL_KEYWORDS = {
     "block",
     "bloque",
     "piso",
-    "villa",
-    "condominio",
     "casa",
 }
 
 
 NUMBER_PATTERN = re.compile(r"\b\d{1,6}[a-z]?\b", re.IGNORECASE)
+
+
+def _prepare_address_text(cleaned_address: str) -> str:
+    text = str(cleaned_address or "").strip().lower()
+    if not text:
+        return ""
+
+    text = re.sub(r"([a-z])([0-9])", r"\1 \2", text)
+    text = re.sub(r"([0-9])([a-z])", r"\1 \2", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
 
 
 def _normalize_numero_raw(numero_raw: str) -> str:
@@ -67,27 +76,18 @@ def _extract_detail_tokens(tokens: list[str]) -> list[str]:
 
 
 def parse_address_components(cleaned_address: str, numero_raw: str) -> dict[str, str]:
-    tokens = cleaned_address.split()
+    prepared_address = _prepare_address_text(cleaned_address)
+    tokens = prepared_address.split()
 
     numero_from_column = _normalize_numero_raw(numero_raw)
-    number_candidates = _extract_number_candidates(cleaned_address)
-
-    if numero_from_column:
-        numero_final = numero_from_column
-    elif number_candidates:
-        long_candidates = [candidate for candidate in number_candidates if any(ch.isdigit() for ch in candidate) and len(candidate) >= 3]
-        numero_final = long_candidates[0] if long_candidates else number_candidates[0]
-    else:
-        numero_final = ""
+    numero_final = numero_from_column
 
     detail_tokens = _extract_detail_tokens(tokens)
     detail_set = set(detail_tokens)
 
     base_tokens: list[str] = []
-    removed_number = False
     for token in tokens:
-        if not removed_number and numero_final and token.lower() == numero_final.lower():
-            removed_number = True
+        if numero_final and token.lower() == numero_final.lower():
             continue
         if token in detail_set:
             continue
