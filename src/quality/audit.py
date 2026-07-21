@@ -63,6 +63,20 @@ KNOWN_COMPLEX_GLUE_PATTERNS = {
     "nalcahuesan",
     "penonsotero",
 }
+VALID_INTERNAL_REPEAT_TOKENS = {
+    "iquique",
+    "concon",
+    "rapel",
+    "vichuquen",
+    "taltal",
+    "longavi",
+    "batuco",
+    "penco",
+    "teno",
+    "arauco",
+    "parral",
+    "mehuin",
+}
 
 
 def _normalize_text(value: str) -> str:
@@ -138,12 +152,12 @@ def _has_complex_glued_word(direccion: str) -> bool:
     if not lowered:
         return False
 
-    compact = lowered.replace(" ", "")
-    if any(pattern in compact for pattern in KNOWN_COMPLEX_GLUE_PATTERNS):
+    tokens = [token for token in lowered.split() if token]
+    if any(token in KNOWN_COMPLEX_GLUE_PATTERNS for token in tokens):
         return True
 
     # Alta confianza: palabras unidas que terminan o contienen claramente una comuna catalogada.
-    for token in lowered.split():
+    for token in tokens:
         token_norm = _normalize_text(token)
         if len(token_norm) < 12:
             continue
@@ -162,8 +176,23 @@ def _has_repeated_fragment(direccion: str) -> bool:
     lowered = _clean_text(direccion).lower()
     if not lowered:
         return False
-    compact = lowered.replace(" ", "")
-    return bool(re.search(r"([a-z]{3,})\1", compact)) or bool(re.search(r"([a-z]{3,})\s+\1", lowered))
+
+    words = [word for word in lowered.split() if word]
+    for index in range(len(words) - 1):
+        if words[index].isdigit() and words[index + 1].isdigit():
+            continue
+        if words[index] == words[index + 1]:
+            return True
+
+    for token in words:
+        if token in VALID_INTERNAL_REPEAT_TOKENS:
+            continue
+        if len(token) >= 10:
+            half = len(token) // 2
+            if len(token) % 2 == 0 and token[:half] == token[half:]:
+                return True
+
+    return False
 
 
 def _classify_directional_suffix(direccion: str, comuna: str, ciudad: str) -> str:

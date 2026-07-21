@@ -152,6 +152,39 @@ def _sanitize_summary_direction(row: dict) -> str:
     result = strip_phrase(result, comuna)
     result = strip_phrase(result, ciudad)
 
+    def collapse_repeated_tail(text: str) -> str:
+        words = text.split()
+        if len(words) < 3:
+            return text
+
+        # Colapsa duplicaciones territoriales del tipo "vicuna vicuna 16".
+        if words[-1].isdigit() and len(words) >= 3 and words[-2].lower() == words[-3].lower():
+            reduced = words[:-3] + [words[-2], words[-1]]
+            return " ".join(reduced).strip()
+
+        # Colapsa duplicaciones territoriales al final del texto.
+        if len(words) >= 2 and words[-1].lower() == words[-2].lower():
+            reduced = words[:-1]
+            return " ".join(reduced).strip()
+
+        return text
+
+    result = collapse_repeated_tail(result)
+
+    def collapse_adjacent_duplicate_words(text: str) -> str:
+        words = text.split()
+        if len(words) < 2:
+            return text
+
+        collapsed: list[str] = [words[0]]
+        for word in words[1:]:
+            if collapsed[-1].lower() == word.lower() and not word.isdigit():
+                continue
+            collapsed.append(word)
+        return " ".join(collapsed).strip()
+
+    result = collapse_adjacent_duplicate_words(result)
+
     trusted_places = [comuna, ciudad]
     for place in trusted_places:
         if not place:
@@ -198,6 +231,29 @@ def _sanitize_summary_direction(row: dict) -> str:
 
     result = " ".join(result.split()).strip()
     return result
+
+
+def _contains_no_address_marker(value: Any) -> bool:
+    text = _normalize_text(str(value or ""))
+    if not text:
+        return False
+    return any(marker in text for marker in {"SIN DIRECCION", "SIN DOMICILIO", "NO REGISTRA DIRECCION"})
+
+
+def _should_export_summary_row(row: dict, direccion: str) -> bool:
+    if not direccion:
+        return False
+
+    markers = [
+        row.get("direccion_original", ""),
+        row.get("direccion_limpia", ""),
+        row.get("direccion_base", ""),
+        row.get("ciudad_original", ""),
+        row.get("ciudad_resuelta", ""),
+        row.get("comuna_original", ""),
+        row.get("comuna_resuelta", ""),
+    ]
+    return not any(_contains_no_address_marker(value) for value in markers)
 
 
 def _address_signature(row: dict) -> str:
@@ -283,13 +339,17 @@ def build_summary_rows(results: list[dict], similarity_threshold: int = 90) -> l
         )
 
         for winner in winners:
+            direccion = _to_title_case(_sanitize_summary_direction(winner))
+            if not _should_export_summary_row(winner, direccion):
+                continue
+
             summary.append(
                 {
                     "RUT": rut,
                     "DV": dv,
                     "RUT+DV": f"{rut}-{dv}",
                     "NOMBRE": str(winner.get("nombre", "")).strip(),
-                    "direccion": _to_title_case(_sanitize_summary_direction(winner)),
+                    "direccion": direccion,
                     "numero": _clean_number(winner.get("numero_final", "")),
                     "comuna": str(winner.get("comuna_resuelta", "")).strip(),
                     "ciudad": str(winner.get("ciudad_resuelta", "")).strip() or str(winner.get("ciudad_original", "")).strip(),
